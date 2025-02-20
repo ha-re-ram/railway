@@ -10,7 +10,7 @@ const pendingMessages = new Map();
 
 wss.on("connection", (ws, req) => {
     const clientIp = req.socket.remoteAddress;
-    console.log(New client connected from ${clientIp});
+    console.log(`New client connected from ${clientIp}`);
 
     ws.on("message", (message) => {
         try {
@@ -21,7 +21,7 @@ wss.on("connection", (ws, req) => {
                 const deviceId = data.deviceId;
                 if (deviceId) {
                     clients.set(deviceId, ws);
-                    console.log(Registered client: ${deviceId});
+                    console.log(`Registered client: ${deviceId}`);
 
                     // Send any pending messages
                     if (pendingMessages.has(deviceId)) {
@@ -52,14 +52,14 @@ wss.on("connection", (ws, req) => {
 
             // Store sender session
             clients.set(senderDeviceId, ws);
-            console.log(Sender (${senderDeviceId}) is online.);
+            console.log(`Sender (${senderDeviceId}) is online.`);
 
             // Forward the message to the receiver if online
             if (clients.has(receiverDeviceId)) {
-                console.log(Delivering message to receiver: ${receiverDeviceId});
+                console.log(`Delivering message to receiver: ${receiverDeviceId}`);
                 clients.get(receiverDeviceId).send(JSON.stringify(data));
             } else {
-                console.log(Receiver (${receiverDeviceId}) is offline. Storing message.);
+                console.log(`Receiver (${receiverDeviceId}) is offline. Storing message.`);
                 if (!pendingMessages.has(receiverDeviceId)) {
                     pendingMessages.set(receiverDeviceId, []);
                 }
@@ -72,15 +72,16 @@ wss.on("connection", (ws, req) => {
     });
 
     ws.on("close", () => {
-        console.log(Client from ${clientIp} disconnected);
+        console.log(`Client from ${clientIp} disconnected`);
 
         // Remove disconnected clients
-        clients.forEach((client, deviceId) => {
+        for (const [deviceId, client] of clients.entries()) {
             if (client === ws) {
                 clients.delete(deviceId);
-                console.log(Removed device: ${deviceId});
+                console.log(`Removed device: ${deviceId}`);
+                break;
             }
-        });
+        }
     });
 });
 
