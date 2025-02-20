@@ -1,6 +1,12 @@
 const WebSocket = require("ws");
 
-const wss = new WebSocket.Server({ port: 8080 });
+// Use the port provided by Railway, default to 8080 if running locally
+const PORT = process.env.PORT || 8080;
+
+// Create a WebSocket server on the dynamic port
+const wss = new WebSocket.Server({ port: PORT });
+
+console.log(`WebSocket server is running on port ${PORT}`);
 
 // Store connected clients
 const clients = new Map();
@@ -17,7 +23,6 @@ wss.on("connection", (ws, req) => {
             const data = JSON.parse(message);
 
             if (data.action === "register") {
-                // Register client with their device ID
                 const deviceId = data.deviceId;
                 if (deviceId) {
                     clients.set(deviceId, ws);
@@ -33,7 +38,6 @@ wss.on("connection", (ws, req) => {
                 return;
             }
 
-            // Extract sender and receiver correctly
             const senderData = data.senderData;
             const receiverData = data.receiverData;
 
@@ -50,11 +54,9 @@ wss.on("connection", (ws, req) => {
                 return;
             }
 
-            // Store sender session
             clients.set(senderDeviceId, ws);
             console.log(`Sender (${senderDeviceId}) is online.`);
 
-            // Forward the message to the receiver if online
             if (clients.has(receiverDeviceId)) {
                 console.log(`Delivering message to receiver: ${receiverDeviceId}`);
                 clients.get(receiverDeviceId).send(JSON.stringify(data));
@@ -74,15 +76,13 @@ wss.on("connection", (ws, req) => {
     ws.on("close", () => {
         console.log(`Client from ${clientIp} disconnected`);
 
-        // Remove disconnected clients
-        for (const [deviceId, client] of clients.entries()) {
+        clients.forEach((client, deviceId) => {
             if (client === ws) {
                 clients.delete(deviceId);
                 console.log(`Removed device: ${deviceId}`);
-                break;
             }
-        }
+        });
     });
 });
 
-console.log("WebSocket server is running on ws://localhost:8080");
+console.log(`WebSocket server is running on ws://localhost:${PORT}`);
